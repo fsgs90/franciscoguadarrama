@@ -107,6 +107,20 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
 .modal{ position:fixed; inset:0; background:rgba(0,0,0,0.85); display:none; align-items:center; justify-content:center; z-index:2001; }
 .modal.active{display:flex}
 .modal-box{ background:#0b1220; padding:2rem; border:1px solid var(--accent); width:min(700px,90vw); border-radius:8px; }
+.video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
 </style>
 </head>
 
@@ -132,12 +146,14 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
 </div>
 </nav>
 
+
 <div id="home" class="page active">
     <section class="hero">
         <h1>FRANCISCO<br>GUADARRAMA</h1>
         <p>// TECH ARTIST</p>
         <div class="filter-wrap">
-            <button class="filter active" data-filter="shaders">SHADERS</button>
+            <button class="filter active" data-filter="reel">[ DEMO_REEL ]</button>
+            <button class="filter" data-filter="shaders">SHADERS</button>
             <button class="filter" data-filter="tools">TOOLS</button>
             <button class="filter" data-filter="vfx">VFX</button>
             <button class="filter" data-filter="pixel">PIXEL_ART</button>
@@ -145,12 +161,6 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
         </div>
     </section>
 
-    <section class="reel">
-        <h2>[ DEMO_REEL ]</h2>
-        <div class="reel-player">
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/pWibE_B-H7w?si=ZTMvOGiCkFYwdGTA" frameborder="0" allowfullscreen></iframe>
-        </div>
-    </section>
 
     <div class="container">
         <div class="grid" id="grid"></div>
@@ -174,7 +184,6 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
 
 <script>
-// [BLACK BOX: PROJECT DATA UNCHANGED]
 const PROJECTS={
 pixel:{
 featured:{title:"2D Dynamic Shadow System",img:"https://i.makeagif.com/media/4-26-2026/8c9H56.gif"},
@@ -197,13 +206,24 @@ mid:{title:"Low Poly Tool",img:"https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjE
 small:{title:"Workflow Tool",img:"https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZnVtODY5eDZ6YjY4NHA0NGd4bDc1dG9lbGk4YzQ1Mjc2bWc1NmFydiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/YfIqRqgD6HxsPTIwfg/giphy.gif"}
 },
 "3d": {
-  "featured": { "title": "PBR 3D Lenticular Frame Effect", "embed": "<iframe src='https://sketchfab.com/models/3aba64fde0264a668899d42a4ad8b98c/embed'></iframe>" },
+  "featured": { "title": "UV-based 3D Lenticular Effect", "embed": "<iframe src='https://sketchfab.com/models/3aba64fde0264a668899d42a4ad8b98c/embed'></iframe>" },
   "mid": { "title": "PBR 3D Logo", "embed": "<iframe src='https://sketchfab.com/models/c3b82e13e1ca4900bea08da1b50d3997/embed'></iframe>" },
   "small": { "title": "PSX Low Poly Fire Barrel", "embed": "<iframe src='https://sketchfab.com/models/8f28439b7873410f9fa6c91733ddd0a1/embed'></iframe>" }
-}
+},
+reel: {
+    featured: {
+        title: "DEMO_REEL_2026",
+        // Added referrerpolicy and allow attributes to satisfy Error 153
+        embed: `<iframe src="https://www.youtube-nocookie.com/embed/ZbsmFWlVB94?si=v9APyi4xEKt77KUh&autoplay=1&mute=1" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerpolicy="strict-origin-when-cross-origin" 
+                allowfullscreen></iframe>`
+    },}
 };
 
-// [BLACK BOX: APPLICATION LOGIC UNCHANGED]
+// --- [MAIN APP] ---
+// The App class encapsulates all the functionality of the portfolio, including WebGL effects, audio control, and UI interactions
 class App{
 constructor(){
 this.ship = document.getElementById("ship");
@@ -219,13 +239,16 @@ this.target=new THREE.Vector2(.5,.5); this.bleed=new THREE.Vector4();
 this.bleedTarget=new THREE.Vector4(); this.intensity=0;
 this.init();
 }
-init(){ this.initGL(); this.initResize(); this.setupTrail(); this.nav(); this.render("shaders"); this.loop(); }
+// --- [INITIALIZATION] ---
+// The init function sets up the WebGL context, event listeners, and starts the main loop
+init(){ this.initGL(); this.initResize(); this.setupTrail(); this.nav(); this.render("reel"); this.loop(); }
 initResize(){ window.addEventListener("resize",()=>this.onResize()); }
 onResize(){
     this.renderer.setSize(innerWidth, innerHeight);
     this.uniforms.u_res.value.set(innerWidth, innerHeight);
     this.trailCanvas.width = innerWidth; this.trailCanvas.height = innerHeight;
 }
+// The initGL function initializes the Three.js renderer, scene, camera, and shader material for the interactive bleed effect
 initGL(){
 this.renderer=new THREE.WebGLRenderer({canvas:document.getElementById("webgl"),alpha:true});
 this.renderer.setSize(innerWidth,innerHeight);
@@ -321,16 +344,36 @@ drawTrail() {
     }
 }
 card(d, t) {
-    const c = document.createElement("div"); c.className = `card ${t}`;
-    const visual = d.embed ? `<div class="image">${d.embed}</div>` : `<div class="image"><img src="${d.img}"></div>`;
-    c.innerHTML = `${visual}<div class="info"><h3>${d.title}</h3></div>`;
+    const c = document.createElement("div"); 
+    c.className = `card ${t}`;
+
+    // 1. Clean up the embed string and ensure it has the necessary permissions
+    const visualHTML = d.embed 
+        ? `<div class="image video-container">${d.embed}</div>` 
+        : `<div class="image"><img src="${d.img}"></div>`;
+
+    c.innerHTML = `${visualHTML}<div class="info"><h3>${d.title}</h3></div>`;
+
+    // 2. Add a 'pointer-events' fix to your CSS or directly here 
+    // This ensures your hover effects still work even if the user mouses over the video
+    const videoFrame = c.querySelector('iframe');
+    if (videoFrame) {
+        videoFrame.style.pointerEvents = "none"; // Allows mouse events to pass through to the card
+        // Force the correct allow attributes if they are missing
+        videoFrame.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+    }
+
     c.onmouseenter = () => {
         const r = c.getBoundingClientRect();
         this.bleedTarget.set(r.left / innerWidth, 1 - r.bottom / innerHeight, r.width / innerWidth, r.height / innerHeight);
         this.intensity = 1.2;
     };
-    c.onmouseleave = () => this.intensity = 0; return c;
+    
+    c.onmouseleave = () => this.intensity = 0; 
+    
+    return c;
 }
+
 render(t){
     const d=PROJECTS[t]; this.grid.innerHTML="";
     this.grid.appendChild(this.card(d.featured,"featured"));
