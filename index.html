@@ -132,6 +132,18 @@ footer {
     gap: 8px;
 }
 
+/* PALETTE SWATCH BUTTONS
+   Split diagonal shows bg + accent at a glance */
+#palette-swatches button {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+#palette-swatches button:hover    { transform: scale(1.2); }
+#palette-swatches button.active   { border-color: var(--accent); }
+
 .swatch {
     width: 16px;
     height: 16px;
@@ -150,6 +162,8 @@ footer {
     cursor: pointer;
     padding: 0;
 }
+
+
 
 </style>
 </head>
@@ -172,8 +186,14 @@ footer {
   <!-- ADD THIS CENTER BLOCK -->
   <div id="colorControls">
     <!-- Saber color — only two options, clear identity choice -->
-    <button class="swatch" data-color="0.2,1.0,0.3" style="background:#b2f49f"></button>
-    <button class="swatch" data-color="0.9,0,1.0" style="background:#db6be3"></button>
+     <!-- PALETTE SWATCHES — each data-palette matches a key in PALETTES -->
+    <div id="palette-swatches" style="display:flex; gap:8px; align-items:center;">
+    <button data-palette="phosphor" title="Phosphor Green" style="background:#b2f49f"></button>
+    <button data-palette="amber"    title="Cyber Amber" style="background:#f9c54d"></button>
+    <button data-palette="pink"     title="Plasma Pink" style="background:#db6be3"></button>
+    <button data-palette="ice"      title="Ice Blue" style="background:#a8d8ff"></button>
+    <button data-palette="purple"   title="Void Purple" style="background:#c4a0ff"></button>
+    </div>
 
     <!-- CRT shader color — full spectrum picker -->
     <input type="color" id="colorPicker" value="#b2f49f" title="CRT Color">
@@ -237,7 +257,19 @@ footer {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
 
 <script>
-// [BLACK BOX: PROJECT DATA UNCHANGED]
+
+// PALETTE SYSTEM
+// Each palette overwrites the CSS variables defined in :root
+const PALETTES = {
+  "phosphor": { "--bg": "#0B0E14", "--text": "#d1cdaf", "--accent": "#b2f49f", "--card": "#111827" },
+  "amber":    { "--bg": "#0D0A05", "--text": "#EDE0C4", "--accent": "#FFB347", "--card": "#1A1200" },
+  "pink":     { "--bg": "#0E080F", "--text": "#E8D0E8", "--accent": "#FF6EB4", "--card": "#1A0E1A" },
+  "ice":      { "--bg": "#060D14", "--text": "#C8DCE8", "--accent": "#38D9F5", "--card": "#0A1520" },
+  "purple":   { "--bg": "#0B080F", "--text": "#D4C8E8", "--accent": "#C084FC", "--card": "#13101A" },
+};
+// Example usage: applyPalette("amber") will switch to the amber theme
+
+// PROJECT DATA
 const PROJECTS={
 pixel:{
 featured:{title:"2D Dynamic Shadow System",img:"https://i.makeagif.com/media/4-26-2026/8c9H56.gif"},
@@ -304,6 +336,7 @@ onResize(){
     this.trailCanvas.width = innerWidth; this.trailCanvas.height = innerHeight;
 }
 initGL(){
+    
 this.renderer=new THREE.WebGLRenderer({canvas:document.getElementById("webgl"),alpha:true});
 this.renderer.setSize(innerWidth,innerHeight);
 this.scene=new THREE.Scene(); this.camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
@@ -359,7 +392,22 @@ nav() {
             if(pid === "home") gsap.to(window, {duration: 1, scrollTo: 0});
         };
     });
-    // Swatches → saber + trail only
+
+    // 1. DEDICATED LISTENER FOR PALETTE SWATCHES
+    document.querySelectorAll('#palette-swatches button').forEach(btn => {
+        btn.onclick = () => {
+            const paletteName = btn.dataset.palette;
+            
+            // Call the global function without "this."
+            applyPalette(paletteName); 
+            
+            // Optional: Visually highlight the selected palette button
+            document.querySelectorAll('#palette-swatches button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+    });
+
+    // 2. LISTENER FOR SPECIFIC RGB SWATCHES
     document.querySelectorAll('.swatch').forEach(btn => {
         btn.onclick = () => {
             const [r,g,b] = btn.dataset.color.split(',').map(Number);
@@ -387,14 +435,14 @@ nav() {
             const r = el.getBoundingClientRect();
             this.bleedTarget.set(r.left / innerWidth, 1 - r.bottom / innerHeight, r.width / innerWidth, r.height / innerHeight);
             this.intensity = 0.7; 
-            this.caTarget = this.caBase; // ADD — same gate as card hover
+            this.caTarget = this.caBase;
         });
         el.addEventListener('mouseleave', () => {
-        this.intensity = 0;
-        this.caTarget = 0.0; // ADD — always resets on leave
+            this.intensity = 0;
+            this.caTarget = 0.0; 
         });
-
     });
+
     window.onmousemove = (e) => {
         const dx = e.clientX - this.lastMousePos.x; const dy = e.clientY - this.lastMousePos.y;
         this.velocity += (Math.sqrt(dx*dx + dy*dy) - this.velocity) * 0.15;
@@ -403,7 +451,9 @@ nav() {
         this.target.set(e.clientX / innerWidth, 1 - e.clientY / innerHeight);
         this.saberTarget.x = e.clientX; this.saberTarget.y = e.clientY;
     };
+
     document.getElementById("sfxToggle").onclick = () => this.toggleSfx();
+    
     document.querySelectorAll(".filter").forEach(b => {
         b.onclick = () => {
             document.querySelectorAll(".filter").forEach(x => x.classList.remove("active"));
@@ -622,8 +672,35 @@ window.addEventListener('scroll', () => {
     scrollV = st - lastS; lastS = st;
 });
 
+// APPLY PALETTE
+// Writing variables to :root (documentElement) causes every
+// CSS rule using var(--accent), var(--bg) etc. to update instantly
+function applyPalette(name) {
+    const p = PALETTES[name];
+    if (!p) return;
+
+    // 1. Update CSS Variables (Fonts/Backgrounds)
+    Object.entries(p).forEach(([variable, value]) => {
+        document.documentElement.style.setProperty(variable, value);
+    });
+
+    // 2. Sync the Saber/Shader colors
+    // We access the global 'window.app' instance (see step 2 below)
+    if (window.app) {
+        const hex = p["--accent"];
+        const { r, g, b } = window.app.hexToVec3(hex);
+        window.app.setColor(r, g, b);
+        
+        // Also update the color picker UI so it matches
+        document.getElementById('colorPicker').value = hex;
+    }
+
+    localStorage.setItem("palette", name);
+}
+
 // START SYSTEMS
-new App();
+window.app = new App();
+// VFX Layer (stars) is separate from App because it doesn't need WebGL, audio, or project data — keeps it lightweight
 animateStars();
 </script>
 </body>
