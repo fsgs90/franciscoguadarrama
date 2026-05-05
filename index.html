@@ -204,7 +204,156 @@ footer {
     padding: 0;
 }
 
+/* ============================================================
+   MOBILE LAYOUT — added for responsive support
+   Rule: touch NOTHING above this comment. Only layout below.
+   All media queries target max-width breakpoints so desktop
+   styles defined above remain completely unchanged.
+   ============================================================ */
 
+/* --- NAV: allow wrapping so controls don't overflow on narrow screens --- */
+nav {
+    flex-wrap: wrap;        /* let the three nav sections stack if needed */
+    gap: 0.4rem;            /* breathing room between wrapped rows */
+    row-gap: 0.5rem;
+}
+
+/* --- FILTER BUTTONS: wrap to next line instead of clipping off-screen --- */
+.filter-wrap {
+    flex-wrap: wrap;        /* key fix — buttons flow to row 2 on small screens */
+    justify-content: center;
+}
+
+/* --- FOOTER LINKS: allow links to wrap across lines on small screens --- */
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* ============================================================
+   TABLET BREAKPOINT  ≤ 768px
+   Covers most landscape phones and small tablets.
+   Main change: hero padding, grid stays 2-col here.
+   ============================================================ */
+@media (max-width: 768px) {
+
+    /* Nav: tighten padding and let it wrap */
+    nav {
+        padding: 0.7rem 1rem;
+    }
+
+    /* Hero: reduce fixed height so it doesn't eat too much screen */
+    .hero {
+        height: auto;
+        min-height: 30vh;
+        padding: 1.5rem 1rem 0.5rem;
+    }
+
+    /* Hero h1: bump the clamp minimum so it's legible on ~375px phones */
+    .hero h1 {
+        font-size: clamp(1.4rem, 6vw, 2.5rem);
+    }
+
+    /* Container: reduce side padding */
+    .container {
+        padding: 1rem;
+    }
+}
+
+/* ============================================================
+   PHONE BREAKPOINT  ≤ 480px
+   Portrait phones. Everything goes single-column here.
+   ============================================================ */
+@media (max-width: 480px) {
+
+    /* Nav: stack into rows, centered */
+    nav {
+        flex-direction: column;
+        align-items: center;        /* center all rows horizontally */
+        padding: 0.6rem 0.8rem;
+        gap: 0.5rem;
+    }
+
+    /* Nav links: centered */
+    .nav-links {
+        width: 100%;
+        justify-content: center;
+        gap: 0.8rem;
+    }
+
+    /* Nav link text: slightly smaller to fit all three on one line */
+    nav a {
+        font-size: 0.55rem;
+        padding: 0.5rem 0.2rem;
+    }
+
+    /* SFX + CA buttons: shrink slightly */
+    .sfx-toggle {
+        font-size: 0.55rem;
+        padding: 0.5rem 0.7rem;
+    }
+
+    /* Color controls: centered, wrap if needed */
+    #colorControls {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Hero heading: scale with viewport, min readable size */
+    .hero h1 {
+        font-size: clamp(1.1rem, 7vw, 1.8rem);
+        line-height: 1.7;
+    }
+
+    /* Filter buttons: smaller text so they still fit 3-per-row */
+    .filter {
+        font-size: 0.45rem;
+        padding: 0.55rem 0.65rem;
+    }
+
+    /* Grid: collapse to single column */
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    /* Featured card: remove the fixed 380px height that works on desktop.
+       On a 375px phone that would be taller than the viewport.
+       "auto" lets it size naturally from its content. */
+    .card.featured {
+        grid-column: 1;   /* was 1/3 (span 2 cols), now just 1 col */
+        height: auto;
+    }
+
+    /* Give the featured image an explicit height since height:75% of "auto" = 0 */
+    .card.featured .image {
+        height: 220px;
+    }
+
+    /* Mid and small cards also need explicit image heights */
+    .card.mid .image,
+    .card.small .image {
+        height: 180px;
+    }
+
+    /* Page: reduce top padding — nav is shorter when stacked */
+    .page {
+        padding-top: 140px; /* slightly more than desktop because stacked nav is taller */
+    }
+
+    /* Container: tighter edges on small screens */
+    .container {
+        padding: 0.8rem;
+    }
+
+    /* Footer: tighter on small screens */
+    footer {
+        padding: 2rem 1rem;
+    }
+}
 
 </style>
 </head>
@@ -282,9 +431,6 @@ footer {
 
         </div>
 </footer>
-</div>
-</div>
-
 
 <div id="l1" class="star-layer stars-large stars-fg"></div>
 <div id="l2" class="star-layer stars-large stars-fg"></div>
