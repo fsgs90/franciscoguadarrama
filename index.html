@@ -294,7 +294,7 @@ this.target=new THREE.Vector2(.5,.5); this.bleed=new THREE.Vector4();
 this.bleedTarget=new THREE.Vector4(); this.intensity=0;
 this.init();
 }
-init(){ this.initGL(); this.initResize(); this.setupTrail(); this.nav(); this.render("reel"); this.loop(); }
+init(){ this.initGL(); this.initResize(); this.setupTrail(); this.nav(); this.render("reel"); this.loop(); this.setColor(0.2, 1.0, 0.3); }
 initResize(){ window.addEventListener("resize",()=>this.onResize()); }
 onResize(){
     this.renderer.setSize(innerWidth, innerHeight);
