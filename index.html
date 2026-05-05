@@ -335,8 +335,8 @@ toggleSfx(){
         this.filterNode.type = 'lowpass'; source.connect(this.filterNode).connect(this.gainNode).connect(this.audioCtx.destination);
     }
     this.isSfxMuted = !this.isSfxMuted;
-    if(this.isSfxMuted){ this.audioEl.pause(); document.getElementById("sfxToggle").textContent = "🔈"; }
-    else{ this.audioEl.play(); document.getElementById("sfxToggle").textContent = "🔇"; }
+    if(this.isSfxMuted){ this.audioEl.pause(); document.getElementById("sfxToggle").textContent = "🔇"; }
+    else{ this.audioEl.play(); document.getElementById("sfxToggle").textContent = "🔈"; }
 }
 setupTrail(){ this.onResize(); }
 addTrailPoint(x,y){
