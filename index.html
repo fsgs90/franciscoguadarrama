@@ -107,6 +107,24 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
 .modal{ position:fixed; inset:0; background:rgba(0,0,0,0.85); display:none; align-items:center; justify-content:center; z-index:2001; }
 .modal.active{display:flex}
 .modal-box{ background:#0b1220; padding:2rem; border:1px solid var(--accent); width:min(700px,90vw); border-radius:8px; }
+
+/* --- FOOTER --- */
+footer {
+    text-align: center;
+    padding: 4rem;
+    font-size: 0.6rem;
+    font-family: var(--font-header);
+    opacity: 0.6; /* keep subtle but not too low */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.footer-links a {
+    color: #38bdf8 !important;   /* force bright white */
+    opacity: 1 !important;       /* kill inherited fading */
+    text-decoration: none;
+}
+
 </style>
 </head>
 
@@ -127,7 +145,7 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
 <button id="sfxToggle" class="sfx-toggle">🔇</button>
 <div class="nav-links">
 <a data-page="home" class="active">HOME</a>
-<a data-page="resume">RESUME</a>
+<a href="assets/docs/FranciscoGuadarrama_Resume.pdf" download="FranciscoGuadarrama_Resume">RESUME</a>
 <a data-page="contact">CONTACT</a>
 </div>
 </nav>
@@ -149,6 +167,25 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
     <div class="container">
         <div class="grid" id="grid"></div>
     </div>
+</div>
+
+<div class="container">
+<div class="grid" id="grid"></div>
+</div>
+
+    <footer>
+    <div>// Lets make something great together!</div>
+    <div class="footer-links">
+        <a href="mailto:fsgs90@gmail.com">Email</a>
+    </div>
+
+    
+    <div class="footer-links">
+        <a href="https://github.com/fsgs90" target="_blank">GitHub</a>
+        <a href="https://liquidpxl.itch.io/" target="_blank">Itch</a>
+        <a href="https://franciscoguadarrama.artstation.com/" target="_blank">ArtStation</a>
+    </div>
+</footer>
 </div>
 
 <div id="resume" class="page"><div class="hero"><h1>RESUME</h1></div></div>
