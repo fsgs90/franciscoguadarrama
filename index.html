@@ -141,17 +141,30 @@ footer {
     gap: 1rem;
 }
 .footer-links a {
-    color: #fff !important; /* The "Core" of the light is white */
-    text-shadow: 0 0 8px var(--accent), 
+    /* 1. TYPOGRAPHY MATCH */
+    font-family: var(--font-header); /* Ensure it uses Press Start 2P */
+    text-transform: uppercase;      /* Match the RESUME and FILTER buttons */
+    font-weight: 700;               /* Make the 'filament' thicker */
+    letter-spacing: 1px;
+    
+    /* 2. COLOR & LIGHTING */
+    color: #fff !important; 
+    /* We add a third layer of shadow: 2px white blur for the "hot" core */
+    text-shadow: 0 0 2px #fff,
+                 0 0 8px var(--accent), 
                  0 0 15px var(--accent); 
+    
     opacity: 1 !important;
     text-decoration: none;
     transition: 0.3s;
 }
 
 .footer-links a:hover {
-    text-shadow: 0 0 12px var(--accent), 
-                 0 0 25px var(--accent);
+    /* Flare up on hover */
+    color: var(--accent) !important;
+    text-shadow: 0 0 5px #fff,
+                 0 0 15px var(--accent), 
+                 0 0 30px var(--accent);
 }
 
 #colorControls {
@@ -230,7 +243,9 @@ footer {
 </div>
 
 <div class="nav-links">
-<a href="assets/docs/FranciscoGuadarrama_Resume.pdf" download="FranciscoGuadarrama_Resume" >RESUME</a>
+    <a href="assets/docs/FranciscoGuadarrama_Resume.pdf" target="_blank"download="FranciscoGuadarrama_Resume" >[ RESUME ]</a>
+    <a href="https://www.linkedin.com/in/francisco-guadarrama/" target="_blank" rel="noopener noreferrer">[ IN ]</a>
+    <a href="https://bsky.app/profile/liquidpxl.itch.io" target="_blank" rel="noopener noreferrer">[ BSKY ]</a>
 </div>
 </nav>
 
@@ -253,18 +268,19 @@ footer {
     </div>
 </div>
 
-    <footer>
-    <div>// Lets make something great together!</div>
-    <div class="footer-links">
-        <a href="mailto:fsgs90@gmail.com">Email</a>
-    </div>
-
-    
-    <div class="footer-links">
-        <a href="https://github.com/fsgs90" target="_blank">GitHub</a>
-        <a href="https://liquidpxl.itch.io/" target="_blank">Itch</a>
+<footer id="footer">
+        <div>// Lets make something great together!</div>
+        <div class="footer-links">
+            <a href="mailto:fsgs90@gmail.com">Email: fsgs90@gmail.com</a>
+        </div>
+        <div class="footer-links">
         <a href="https://franciscoguadarrama.artstation.com/" target="_blank">ArtStation</a>
-    </div>
+
+        <a href="https://github.com/fsgs90" target="_blank">GitHub</a>
+
+        <a href="https://liquidpxl.itch.io/" target="_blank">Itch</a>
+
+        </div>
 </footer>
 </div>
 </div>
@@ -410,13 +426,19 @@ this.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat));
 nav() {
     gsap.registerPlugin(ScrollToPlugin);
     document.querySelectorAll("nav a").forEach(a => {
-        a.onclick = () => {
+        a.onclick = (e) => {
             const pid = a.dataset.page;
-            document.querySelectorAll("nav a").forEach(l => l.classList.remove("active"));
-            a.classList.add("active");
-            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-            document.getElementById(pid).classList.add("active");
-            if(pid === "home") gsap.to(window, {duration: 1, scrollTo: 0});
+            
+            // IF the link has a data-page (like "home"), handle internal navigation
+            if (pid) {
+                e.preventDefault(); // Stop the browser from reloading
+                document.querySelectorAll("nav a").forEach(l => l.classList.remove("active"));
+                a.classList.add("active");
+                document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+                document.getElementById(pid).classList.add("active");
+                if(pid === "home") gsap.to(window, {duration: 1, scrollTo: 0});
+            } 
+            // ELSE (for Resume/Bluesky), let the browser handle target="_blank" or download automatically
         };
     });
 
