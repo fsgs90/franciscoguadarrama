@@ -16,6 +16,7 @@
 --card:#111827;
 --font-header:"Press Start 2P", monospace;
 --font-body:"JetBrains Mono", monospace;
+--star-color: #ffffff;
 }
 
 *{box-sizing:border-box}
@@ -35,10 +36,19 @@ overflow-x:hidden;
 /* Foreground Depth (Passing over content) */
 .stars-fg { z-index: 10; }
 
-.stars-small { width: 1.5px; height: 1.5px; opacity: 0.8; box-shadow: 2vw 5vh #FFF, 22vw 38vh #FFF, 48vw 72vh #FFF, 75vw 42vh #FFF, 95vw 90vh #FFF, 12vw 88vh #FFF; }
-.stars-medium { width: 2px; height: 2px; opacity: 0.9; box-shadow: 10vw 10vh #FFF, 40vw 40vh #FFF, 70vw 70vh #FFF, 25vw 75vh #FFF; }
-.stars-large { width: 6px; height: 6px; opacity: 0.3; filter: blur(2px); box-shadow: 15vw 55vh #FFF, 75vw 85vh #FFF, 30vw 10vh #FFF; }
-
+/* Updated these three classes to use    the global color variable */
+.stars-small { 
+    width: 1.5px; height: 1.5px; opacity: 0.8; 
+    box-shadow: 2vw 5vh var(--star-color), 22vw 38vh var(--star-color), 48vw 72vh var(--star-color), 75vw 42vh var(--star-color), 95vw 90vh var(--star-color), 12vw 88vh var(--star-color); 
+}
+.stars-medium { 
+    width: 2px; height: 2px; opacity: 0.9; 
+    box-shadow: 10vw 10vh var(--star-color), 40vw 40vh var(--star-color), 70vw 70vh var(--star-color), 25vw 75vh var(--star-color); 
+}
+.stars-large { 
+    width: 6px; height: 6px; opacity: 0.3; filter: blur(2px); 
+    box-shadow: 15vw 55vh var(--star-color), 75vw 85vh var(--star-color), 30vw 10vh var(--star-color); 
+}
 /* CRT SYSTEM OVERLAY */
 body::before {
     content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
@@ -191,7 +201,7 @@ footer {
     <button data-palette="amber"    title="Cyber Amber" style="background:#f9c54d"></button>
     <button data-palette="pink"     title="Plasma Pink" style="background:#db6be3"></button>
     <button data-palette="ice"      title="Ice Blue" style="background:#a8d8ff"></button>
-    <button data-palette="purple"   title="Void Purple" style="background:#c4a0ff"></button>
+    <!-- <button data-palette="purple"   title="Void Purple" style="background:#c4a0ff"></button> -->
     </div>
 
     <!-- CRT shader color — full spectrum picker -->
@@ -260,7 +270,7 @@ footer {
 // PALETTE SYSTEM
 // Each palette overwrites the CSS variables defined in :root
 const PALETTES = {
-  "phosphor": { "--bg": "#0B0E14", "--text": "#d1cdaf", "--accent": "#b2f49f", "--card": "#111827" },
+  "phosphor": { "--bg": "#0B0E14", "--text": "#d1cdaf", "--accent": "#b2f49f", "--card": "#111827", "--saber": "#33FF4D" },
   "amber":    { "--bg": "#0D0A05", "--text": "#EDE0C4", "--accent": "#FFB347", "--card": "#1A1200" },
   "pink":     { "--bg": "#0E080F", "--text": "#E8D0E8", "--accent": "#FF6EB4", "--card": "#1A0E1A" },
   "ice":      { "--bg": "#060D14", "--text": "#C8DCE8", "--accent": "#38D9F5", "--card": "#0A1520" },
@@ -686,12 +696,19 @@ function applyPalette(name) {
     // 2. Sync the Saber/Shader colors
     // We access the global 'window.app' instance (see step 2 below)
     if (window.app) {
-        const hex = p["--accent"];
+        const hex = p["--saber"] || p["--accent"]; // Fallback to accent if saber color isn't defined
         const { r, g, b } = window.app.hexToVec3(hex);
         window.app.setColor(r, g, b);
         
+        hex = p["--accent"];
+        r, g, b = window.app.hexToVec3(hex);
         // Also update the color picker UI so it matches
         document.getElementById('colorPicker').value = hex;
+        // 3. TINT THE STARFIELD
+            // We take the accent color and make it very light/whitish
+            // for the starfield so it's subtle.
+            const starTint = `rgba(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)}, 0.8)`;
+            document.documentElement.style.setProperty('--star-color', starTint);
     }
 
     localStorage.setItem("palette", name);
