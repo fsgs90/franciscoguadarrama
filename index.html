@@ -265,19 +265,20 @@ initGL(){
 this.renderer=new THREE.WebGLRenderer({canvas:document.getElementById("webgl"),alpha:true});
 this.renderer.setSize(innerWidth,innerHeight);
 this.scene=new THREE.Scene(); this.camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-this.uniforms={ u_mouse:{value:this.mouse}, u_bleed:{value:this.bleed}, u_intensity:{value:0}, u_res:{value:new THREE.Vector2(innerWidth,innerHeight)} };
+this.uniforms={ u_mouse:{value:this.mouse}, u_bleed:{value:this.bleed}, u_intensity:{value:0}, u_res:{value:new THREE.Vector2(innerWidth,innerHeight)}, u_color:{value:new THREE.Vector3(0.2, 1.0, 0.3)} };
 const mat=new THREE.ShaderMaterial({
 uniforms:this.uniforms,
 vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.);}`,
 fragmentShader:`
 precision highp float;
-varying vec2 vUv; uniform vec2 u_mouse; uniform vec4 u_bleed; uniform float u_intensity; uniform vec2 u_res;
+varying vec2 vUv; uniform vec2 u_mouse; uniform vec4 u_bleed; uniform float u_intensity; uniform vec2 u_res; uniform vec3 u_color;
 void main(){
 vec2 uv=vUv; float aspect=u_res.x/u_res.y;
 float d=distance(uv*vec2(aspect,1.),u_mouse*vec2(aspect,1.));
 float glow=0.04/(d+0.04);
 float edge=smoothstep(.03,0.,abs(uv.x-(u_bleed.x+u_bleed.z*.5))-u_bleed.z*.5)*smoothstep(.15,0.,abs(uv.y-(u_bleed.y+u_bleed.w*.5))-u_bleed.w*.5);
-vec3 col=vec3(0.2,1.0,0.3)*(glow+(edge*u_intensity*.2));
+//
+vec3 col=u_color*(glow+(edge*u_intensity*.2));
 gl_FragColor=vec4(col,(glow+edge)*.5);
 }`
 });
