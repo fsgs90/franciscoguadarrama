@@ -171,15 +171,16 @@ footer {
 <button id="sfxToggle" class="sfx-toggle">🔇</button>
   <!-- ADD THIS CENTER BLOCK -->
   <div id="colorControls">
-    <!-- Preset swatches — data-color holds the normalized vec3 values -->
-    <button class="swatch" data-color="0.2,1.0,0.3"  style="background:#b2f49f"></button>
-    <button class="swatch" data-color="0.2,0.5,1.0"  style="background:#38bdf8"></button>
-    <button class="swatch" data-color="1.0,0.2,0.2"  style="background:#f87171"></button>
-    <button class="swatch" data-color="0.8,0.2,1.0"  style="background:#c084fc"></button>
+    <!-- Saber color — only two options, clear identity choice -->
+    <button class="swatch" data-color="0.2,1.0,0.3" style="background:#b2f49f"></button>
+    <button class="swatch" data-color="0.9,0,1.0" style="background:#db6be3"></button>
 
-    <!-- Native color picker — browser handles the color wheel UI -->
-    <input type="color" id="colorPicker" value="#b2f49f">
-  </div>
+    <!-- CRT shader color — full spectrum picker -->
+    <input type="color" id="colorPicker" value="#b2f49f" title="CRT Color">
+
+    <!-- Chromatic aberration toggle -->
+    <button id="caToggle" class="sfx-toggle">CA:OFF</button>
+</div>
 
 <div class="nav-links">
 <a href="assets/docs/FranciscoGuadarrama_Resume.pdf" download="FranciscoGuadarrama_Resume" >RESUME</a>
@@ -291,7 +292,8 @@ this.trailPoints = []; this.grid=document.getElementById("grid");
 this.modal=document.getElementById("modal"); this.modalTitle=document.getElementById("modalTitle");
 this.modalImg=document.getElementById("modalImg"); this.mouse=new THREE.Vector2(.5,.5);
 this.target=new THREE.Vector2(.5,.5); this.bleed=new THREE.Vector4();
-this.bleedTarget=new THREE.Vector4(); this.intensity=0;
+this.caBase = 0.0; // ADD THIS — base value for chromatic aberration, toggled by CA button
+this.bleedTarget=new THREE.Vector4(); this.intensity=0; this.caTarget = 0.0;  // Target for chromatic aberration
 this.init();
 }
 init(){ this.initGL(); this.initResize(); this.setupTrail(); this.nav(); this.render("reel"); this.loop(); this.setColor(0.2, 1.0, 0.3); }
@@ -305,21 +307,42 @@ initGL(){
 this.renderer=new THREE.WebGLRenderer({canvas:document.getElementById("webgl"),alpha:true});
 this.renderer.setSize(innerWidth,innerHeight);
 this.scene=new THREE.Scene(); this.camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-this.uniforms={ u_mouse:{value:this.mouse}, u_bleed:{value:this.bleed}, u_intensity:{value:0}, u_res:{value:new THREE.Vector2(innerWidth,innerHeight)}, u_color:{value:new THREE.Vector3(0.2, 1.0, 0.3)} };
+this.uniforms={ u_mouse:{value:this.mouse}, u_bleed:{value:this.bleed}, u_intensity:{value:0}, u_res:{value:new THREE.Vector2(innerWidth,innerHeight)}, u_color:{value:new THREE.Vector3(0.2, 1.0, 0.3)}, u_ca:{value:0.0}}; //0 off 1 on for chromatic aberration
 const mat=new THREE.ShaderMaterial({
 uniforms:this.uniforms,
 vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.);}`,
 fragmentShader:`
 precision highp float;
-varying vec2 vUv; uniform vec2 u_mouse; uniform vec4 u_bleed; uniform float u_intensity; uniform vec2 u_res; uniform vec3 u_color;
+varying vec2 vUv; uniform vec2 u_mouse; uniform vec4 u_bleed; uniform float u_intensity; uniform vec2 u_res; uniform vec3 u_color; uniform float u_ca;
 void main(){
-vec2 uv=vUv; float aspect=u_res.x/u_res.y;
-float d=distance(uv*vec2(aspect,1.),u_mouse*vec2(aspect,1.));
-float glow=0.04/(d+0.04);
-float edge=smoothstep(.03,0.,abs(uv.x-(u_bleed.x+u_bleed.z*.5))-u_bleed.z*.5)*smoothstep(.15,0.,abs(uv.y-(u_bleed.y+u_bleed.w*.5))-u_bleed.w*.5);
-//
-vec3 col=u_color*(glow+(edge*u_intensity*.2));
-gl_FragColor=vec4(col,(glow+edge)*.5);
+    vec2 uv = vUv;
+    float aspect = u_res.x / u_res.y;
+
+    /* --- GLOW: proximity to mouse cursor --- */
+    float d = distance(uv * vec2(aspect,1.), u_mouse * vec2(aspect,1.));
+    float glow = 0.04 / (d + 0.04);
+
+    /* --- EDGE: highlight hovered UI elements --- */
+    float edge = smoothstep(.03,0., abs(uv.x-(u_bleed.x+u_bleed.z*.5))-u_bleed.z*.5)
+               * smoothstep(.15,0., abs(uv.y-(u_bleed.y+u_bleed.w*.5))-u_bleed.w*.5);
+
+    /* --- BASE INTENSITY: combined glow + edge --- */
+    float base = glow + (edge * u_intensity * 0.2);
+
+    /* --- CHROMATIC ABERRATION: offset R and B channels horizontally ---
+       u_ca=0 means aberration=0, no effect. u_ca=1 shifts channels apart. */
+    float aberration = 0.07 * u_ca;
+    float rGlow = 0.04 / (distance((uv + vec2(aberration, 0.0)) * vec2(aspect,1.), u_mouse * vec2(aspect,1.)) + 0.04);
+    float bGlow = 0.04 / (distance((uv - vec2(aberration, 0.0)) * vec2(aspect,1.), u_mouse * vec2(aspect,1.)) + 0.04);
+
+    /* --- FINAL COLOR: tint each channel, R and B are offset when CA is on --- */
+    vec3 col = vec3(
+        u_color.r * (rGlow + edge * u_intensity * 0.2),
+        u_color.g * base,
+        u_color.b * (bGlow + edge * u_intensity * 0.2)
+    );
+
+    gl_FragColor = vec4(col, (glow + edge) * 0.5);
 }`
 });
 this.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat));
@@ -336,11 +359,12 @@ nav() {
             if(pid === "home") gsap.to(window, {duration: 1, scrollTo: 0});
         };
     });
-    // Swatches — parse the data-color string
+    // Swatches → saber + trail only
     document.querySelectorAll('.swatch').forEach(btn => {
         btn.onclick = () => {
-            const [r, g, b] = btn.dataset.color.split(',').map(Number);
-            this.setColor(r, g, b);
+            const [r,g,b] = btn.dataset.color.split(',').map(Number);
+            this.setSaberColor(r, g, b);
+            this.setShaderColor(r, g, b);
         };
     });
 
@@ -349,13 +373,27 @@ nav() {
         const { r, g, b } = this.hexToVec3(e.target.value);
         this.setColor(r, g, b);
     };
+
+    // CA toggle → flip u_ca uniform between 0 and 1
+    document.getElementById('caToggle').onclick = () => {
+        const isOn = this.caBase === 1.0;
+        this.caBase = isOn ? 0.0 : 1.0;  // flip the base
+        this.caTarget = 0.0;              // reset on toggle off
+        document.getElementById('caToggle').textContent = isOn ? 'CA:OFF' : 'CA:ON';
+    };
+
     document.querySelectorAll("nav a, .sfx-toggle, .filter").forEach(el => {
         el.addEventListener('mouseenter', () => {
             const r = el.getBoundingClientRect();
             this.bleedTarget.set(r.left / innerWidth, 1 - r.bottom / innerHeight, r.width / innerWidth, r.height / innerHeight);
             this.intensity = 0.7; 
+            this.caTarget = this.caBase; // ADD — same gate as card hover
         });
-        el.addEventListener('mouseleave', () => this.intensity = 0);
+        el.addEventListener('mouseleave', () => {
+        this.intensity = 0;
+        this.caTarget = 0.0; // ADD — always resets on leave
+        });
+
     });
     window.onmousemove = (e) => {
         const dx = e.clientX - this.lastMousePos.x; const dy = e.clientY - this.lastMousePos.y;
@@ -421,6 +459,32 @@ setColor(r, g, b) {
     // Subtract 37 because sepia() starts at ~37deg, not 0
     this.saber.style.filter = `grayscale(1) sepia(1) hue-rotate(${hue - 37}deg) saturate(3)`;
 }
+/* Controls saber GIF + trail only — called by green/red swatches */
+setSaberColor(r, g, b) {
+    // Store as 0-255 for canvas rgba() strings
+    this.saberColor = {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+    };
+    // Apply CSS filter tint to greyscale GIF
+    const max = Math.max(r,g,b), min = Math.min(r,g,b), delta = max - min;
+    let hue = 0;
+    if(delta !== 0){
+        if(max===r)      hue = ((g-b)/delta) % 6;
+        else if(max===g) hue = ((b-r)/delta) + 2;
+        else             hue = ((r-g)/delta) + 4;
+    }
+    hue = Math.round(hue * 60);
+    if(hue < 0) hue += 360;
+    this.saber.style.filter = `grayscale(1) sepia(1) hue-rotate(${hue - 37}deg) saturate(3)`;
+}
+
+/* Controls WebGL shader glow only — called by color picker */
+setShaderColor(r, g, b) {
+    this.uniforms.u_color.value.set(r, g, b);
+}
+
 setupTrail(){ this.onResize(); }
 addTrailPoint(x,y){
     this.trailPoints.push({x,y,t:Date.now()});
@@ -479,12 +543,16 @@ card(d, t) {
         iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     }
 
-    c.onmouseenter = () => {
-        const r = c.getBoundingClientRect();
-        this.bleedTarget.set(r.left / innerWidth, 1 - r.bottom / innerHeight, r.width / innerWidth, r.height / innerHeight);
-        this.intensity = 1.2;
+   c.onmouseenter = () => {
+    const r = c.getBoundingClientRect();
+    this.bleedTarget.set(r.left/innerWidth, 1-r.bottom/innerHeight, r.width/innerWidth, r.height/innerHeight);
+    this.intensity = 1.2;
+    this.caTarget = this.caBase;  // only fires if toggle is ON, was hardcoded 1.0
     };
-    c.onmouseleave = () => this.intensity = 0; 
+   c.onmouseleave = () => {
+        this.intensity = 0;
+        this.caTarget = 0.0;  // ADD THIS — fades out on leave
+    };
     return c;
 }
 
@@ -499,23 +567,34 @@ render(t){
     if (d.small) this.grid.appendChild(this.card(d.small, "small"));
 }
 loop(){
+    // --- AUDIO: modulate gain and filter cutoff with mouse velocity ---
     if (!this.isSfxMuted && this.gainNode) {
         this.gainNode.gain.setTargetAtTime(0.15 + (this.velocity/120), this.audioCtx.currentTime, 0.1);
         this.filterNode.frequency.setTargetAtTime(450 + (this.velocity * 15), this.audioCtx.currentTime, 0.1);
     }
-    this.velocity *= 0.95; this.saberPos.x += (this.saberTarget.x - this.saberPos.x) * 0.08;
+
+    // --- SABER: smooth follow + rotation toward target ---
+    this.velocity *= 0.95;
+    this.saberPos.x += (this.saberTarget.x - this.saberPos.x) * 0.08;
     this.saberPos.y += (this.saberTarget.y - this.saberPos.y) * 0.08;
     const angle = Math.atan2(this.saberTarget.y - this.saberPos.y, this.saberTarget.x - this.saberPos.x);
-    this.saber
-.style.left = `${this.saberPos.x}px`; this.saber
-.style.top = `${this.saberPos.y}px`;
-    this.saber
-.style.transform = `translate(-100%, 0) rotate(${angle}rad)`;
-    this.mouse.lerp(this.target,0.08); this.bleed.lerp(this.bleedTarget,0.5);
-    this.uniforms.u_mouse.value=this.mouse; this.uniforms.u_bleed.value=this.bleed;
-    this.uniforms.u_intensity.value=this.intensity; this.drawTrail();
-    this.renderer.render(this.scene,this.camera); requestAnimationFrame(()=>this.loop());
-}
+    this.saber.style.left = `${this.saberPos.x}px`;
+    this.saber.style.top = `${this.saberPos.y}px`;
+    this.saber.style.transform = `translate(-100%, 0) rotate(${angle}rad)`;
+
+    // --- SHADER UNIFORMS: lerp all values toward their targets ---
+    this.mouse.lerp(this.target, 0.08);
+    this.bleed.lerp(this.bleedTarget, 0.5);
+    this.uniforms.u_ca.value += (this.caTarget - this.uniforms.u_ca.value) * 0.1; // ONE lerp only
+    this.uniforms.u_mouse.value = this.mouse;
+    this.uniforms.u_bleed.value = this.bleed;
+    this.uniforms.u_intensity.value = this.intensity;
+
+    // --- DRAW ---
+    this.drawTrail();
+    this.renderer.render(this.scene, this.camera);
+    requestAnimationFrame(()=>this.loop());
+};
 }
 
 // --- [PARALLAX ENGINE] ---
