@@ -124,7 +124,7 @@ background:rgba(17,24,39,0.5); padding:.6rem .9rem; border-radius:4px; margin-le
 <img id="ship" src="assets/art/base_saber_anim.gif"/>
 
 <nav>
-<button id="sfxToggle" class="sfx-toggle">這 SFX</button>
+<button id="sfxToggle" class="sfx-toggle">🔇</button>
 <div class="nav-links">
 <a data-page="home" class="active">HOME</a>
 <a data-page="resume">RESUME</a>
@@ -298,8 +298,8 @@ toggleSfx(){
         this.filterNode.type = 'lowpass'; source.connect(this.filterNode).connect(this.gainNode).connect(this.audioCtx.destination);
     }
     this.isSfxMuted = !this.isSfxMuted;
-    if(this.isSfxMuted){ this.audioEl.pause(); document.getElementById("sfxToggle").textContent = "這 SFX"; }
-    else{ this.audioEl.play(); document.getElementById("sfxToggle").textContent = "矧 SFX"; }
+    if(this.isSfxMuted){ this.audioEl.pause(); document.getElementById("sfxToggle").textContent = "🔈"; }
+    else{ this.audioEl.play(); document.getElementById("sfxToggle").textContent = "🔇"; }
 }
 setupTrail(){ this.onResize(); }
 addTrailPoint(x,y){
