@@ -354,24 +354,26 @@ nav {
     footer {
         padding: 2rem 1rem;
     }
+}
 
-    .separator {
-        color: var(--accent) !important; /* The !important ensures it overrides any default text colors */
-        font-family: 'Courier New', monospace;
-        margin: 0 15px;
-        user-select: none;
-        opacity: 0.7;
-        
-        /* This ensures it transitions smoothly when you click the palette buttons */
-        transition: color 0.3s ease; 
-    }
+/* --- SEPARATOR (//) — global, palette-aware ---
+   Intentionally outside any media query so var(--accent) responds
+   to palette swaps on ALL screen sizes, not just mobile. */
+.separator {
+    color: var(--accent);           /* inherits palette color automatically */
+    font-family: 'Courier New', monospace;
+    margin: 0 15px;
+    user-select: none;
+    opacity: 0.7;
+    transition: color 0.3s ease;   /* smooth palette transitions */
+}
 
-    .button-bar {
+/* --- BUTTON BAR — global layout rule, not phone-only --- */
+.button-bar {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px; /* Space between buttons within a group */
-    }
+    gap: 10px;
 }
 
 </style>
@@ -903,20 +905,22 @@ function applyPalette(name) {
         document.documentElement.style.setProperty(variable, value);
     });
 
-    // 2. Sync the Saber/Shader colors
-    // We access the global 'window.app' instance (see step 2 below)
+    // 2. Sync the Saber/Shader colors via setColor() — single source of truth.
+    //    Prefer a dedicated --saber hex if defined, otherwise fall back to --accent.
     if (window.app) {
-        const hex = p["--saber"] || p["--accent"]; // Fallback to accent if saber color isn't defined
-        const { r, g, b } = window.app.hexToVec3(hex);
-        window.app.setColor(r, g, b);
-        
-        hex = p["--accent"];
-        r, g, b = window.app.hexToVec3(hex);
-        // Also update the color picker UI so it matches
-        document.getElementById('colorPicker').value = hex;
-        // 3. TINT THE STARFIELD
-        // We take the accent color and make it very light/whitish
-        // for the starfield so it's subtle.
+        const saberHex = p["--saber"] || p["--accent"];
+        const { r: sr, g: sg, b: sb } = window.app.hexToVec3(saberHex);
+        window.app.setColor(sr, sg, sb); // updates WebGL uniform + trail + GIF tint
+
+        // 3. Sync color picker UI + starfield tint to the accent color.
+        //    Use a NEW const — never reassign a const.
+        const accentHex = p["--accent"];
+        const { r, g, b } = window.app.hexToVec3(accentHex);
+
+        // Keep the color picker dot in sync with the active palette
+        document.getElementById('colorPicker').value = accentHex;
+
+        // Tint the CSS starfield — subtle rgba so stars don't blow out
         const starTint = `rgba(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)}, 0.8)`;
         document.documentElement.style.setProperty('--star-color', starTint);
     }
