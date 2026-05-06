@@ -354,6 +354,24 @@ nav {
     footer {
         padding: 2rem 1rem;
     }
+
+    .separator {
+        color: var(--accent) !important; /* The !important ensures it overrides any default text colors */
+        font-family: 'Courier New', monospace;
+        margin: 0 15px;
+        user-select: none;
+        opacity: 0.7;
+        
+        /* This ensures it transitions smoothly when you click the palette buttons */
+        transition: color 0.3s ease; 
+    }
+
+    .button-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Space between buttons within a group */
+    }
 }
 
 </style>
@@ -403,13 +421,18 @@ nav {
     <section class="hero">
         <h1>FRANCISCO<br>GUADARRAMA</h1>
         <p>// TECH ARTIST</p>
+        <p>STATUS: OPEN TO WORK</p>
         <div class="filter-wrap">
+            <div class="button-bar">
             <button class="filter active" data-filter="reel">DEMO_REEL</button>
+            <span class="separator">//</span>
             <button class="filter" data-filter="shaders">SHADERS</button>
             <button class="filter" data-filter="tools">TOOLS</button>
             <button class="filter" data-filter="vfx">VFX</button>
+            <span class="separator">//</span>
+            <button class="filter" data-filter="pixel">2D</button>
             <button class="filter" data-filter="3d">3D</button>
-            <button class="filter" data-filter="pixel">PIXEL_ART</button>
+            </div>
         </div>
     </section>
 
@@ -892,10 +915,10 @@ function applyPalette(name) {
         // Also update the color picker UI so it matches
         document.getElementById('colorPicker').value = hex;
         // 3. TINT THE STARFIELD
-            // We take the accent color and make it very light/whitish
-            // for the starfield so it's subtle.
-            const starTint = `rgba(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)}, 0.8)`;
-            document.documentElement.style.setProperty('--star-color', starTint);
+        // We take the accent color and make it very light/whitish
+        // for the starfield so it's subtle.
+        const starTint = `rgba(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)}, 0.8)`;
+        document.documentElement.style.setProperty('--star-color', starTint);
     }
 
     localStorage.setItem("palette", name);
