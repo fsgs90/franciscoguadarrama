@@ -387,6 +387,82 @@ nav {
     gap: 10px;
 }
 
+/* ============================================================
+   COLLAPSIBLE TOOLBAR
+   Slides down from the nav bar. Uses max-height transition
+   because height:auto cannot be animated, and display:none
+   cannot transition at all. max-height 0→fixed = slide effect.
+   ============================================================ */
+.toolbar {
+    position: absolute;
+    top: 100%;                              /* flush below the nav bar */
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.8rem 1.2rem;
+    background: rgba(5,8,16,0.92);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(178,244,159,0.15); /* subtle accent separator line */
+    /* Collapse animation */
+    max-height: 80px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.25s ease;
+}
+
+/* Collapsed state — zero height, invisible, no vertical padding */
+.toolbar.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* CONFIG toggle — pulses at idle to hint it's interactive (discoverability) */
+#configToggle {
+    animation: pulse 3s ease-in-out infinite;
+}
+
+/* Open state — stop pulse, light up in accent color */
+#configToggle.open {
+    animation: none;
+    color: var(--accent);
+    opacity: 1;
+    border-color: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50%       { opacity: 0.85; }
+}
+
+/* RESUME — primary CTA, always glowing so it reads as a button not a link */
+.resume-btn {
+    font-family: var(--font-header);
+    font-size: 0.65rem;
+    color: #fff !important;
+    text-decoration: none;
+    border: 1px solid var(--accent);
+    padding: 0.6rem 0.9rem;
+    border-radius: 4px;
+    text-shadow:
+        0 0 2px #fff,
+        0 0 8px var(--accent);
+    box-shadow:
+        0 0 6px var(--accent),
+        0 0 14px var(--accent);
+    transition: box-shadow 0.3s, text-shadow 0.3s;
+}
+.resume-btn:hover {
+    box-shadow:
+        0 0 10px var(--accent),
+        0 0 25px var(--accent);
+}
+
 </style>
 </head>
 
@@ -404,28 +480,42 @@ nav {
 <img id="saber" src="assets/art/base_saber_anim.gif"/>
 
 <nav>
-<button id="sfxToggle" class="sfx-toggle">🔇</button>
-  <!-- CENTER BLOCK -->
-  <div id="colorControls">
-     <!-- PALETTE SWATCHES — each data-palette matches a key in PALETTES -->
-    <div id="palette-swatches" style="display:flex; gap:8px; align-items:center;">
-    <button data-palette="phosphor" title="Phosphor Green" style="background:#b2f49f"></button>
-    <button data-palette="amber"    title="Cyber Amber" style="background:#f9c54d"></button>
-    <button data-palette="pink"     title="Plasma Pink" style="background:#db6be3"></button>
-    <button data-palette="ice"      title="Ice Blue" style="background:#a8d8ff"></button>
-    <!-- <button data-palette="purple"   title="Void Purple" style="background:#c4a0ff"></button> -->
-    </div>
+    <!-- Always visible: CONFIG hint + RESUME CTA -->
+    <!-- CONFIG pulses at idle so first-time visitors know it's interactive -->
+    <button id="configToggle" class="sfx-toggle">[ CONFIG ]</button>
 
-    <!-- CRT shader color — full spectrum picker -->
-    <input type="color" id="colorPicker" value="#b2f49f" title="CRT Color">
+    <!-- RESUME: promoted to .resume-btn so it gets its own persistent glow -->
+    <a  href="assets/docs/FranciscoGuadarrama_Resume.pdf"
+        class="resume-btn"
+        target="_blank"
+        download="FranciscoGuadarrama_Resume"
+        rel="noopener noreferrer">[ RESUME ]</a>
 
-    <!-- Chromatic aberration toggle -->
-    <button id="caToggle" class="sfx-toggle">CA:OFF</button>
-</div>
+    <!-- Collapsible toolbar — collapsed by default, toggled by #configToggle -->
+    <div id="toolbar" class="toolbar collapsed">
 
-<div class="nav-links">
-    <a href="assets/docs/FranciscoGuadarrama_Resume.pdf" target="_blank"download="FranciscoGuadarrama_Resume" rel="noopener noreferrer">[ RESUME ]</a>
-</div>
+        <!-- SFX toggle -->
+        <button id="sfxToggle" class="sfx-toggle">🔇</button>
+
+        <!-- CENTER BLOCK: palette swatches + color picker + CA toggle -->
+        <div id="colorControls">
+            <!-- PALETTE SWATCHES — each data-palette matches a key in PALETTES -->
+            <div id="palette-swatches" style="display:flex; gap:8px; align-items:center;">
+                <button data-palette="phosphor" title="Phosphor Green" style="background:#b2f49f"></button>
+                <button data-palette="amber"    title="Cyber Amber"    style="background:#f9c54d"></button>
+                <button data-palette="pink"     title="Plasma Pink"    style="background:#db6be3"></button>
+                <button data-palette="ice"      title="Ice Blue"       style="background:#a8d8ff"></button>
+                <!-- <button data-palette="purple" title="Void Purple" style="background:#c4a0ff"></button> -->
+            </div>
+
+            <!-- CRT shader color — full spectrum picker -->
+            <input type="color" id="colorPicker" value="#b2f49f" title="CRT Color">
+
+            <!-- Chromatic aberration toggle -->
+            <button id="caToggle" class="sfx-toggle">CA:OFF</button>
+        </div>
+
+    </div><!-- end #toolbar -->
 </nav>
 
 <div id="home" class="page active">
@@ -686,6 +776,19 @@ nav() {
     };
 
     document.getElementById("sfxToggle").onclick = () => this.toggleSfx();
+
+    // CONFIG TOGGLE — shows/hides the toolbar
+    // Toggles .collapsed on #toolbar and .open on the button itself.
+    // Label swaps between [ CONFIG ] and [ CLOSE ] so state is always readable.
+    document.getElementById('configToggle').addEventListener('click', () => {
+        const toolbar = document.getElementById('toolbar');
+        const btn     = document.getElementById('configToggle');
+        toolbar.classList.toggle('collapsed');
+        btn.classList.toggle('open');
+        btn.textContent = toolbar.classList.contains('collapsed')
+            ? '[ CONFIG ]'
+            : '[ CLOSE ]';
+    });
     
     document.querySelectorAll(".filter").forEach(b => {
         b.onclick = () => {
